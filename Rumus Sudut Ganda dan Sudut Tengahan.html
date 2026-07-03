@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyberpunk Space Quest: Double & Half Angles</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <!-- KaTeX for beautiful math formulas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: #030712;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .font-code {
+            font-family: 'Fira Code', monospace;
+        }
+        /* Neon effects */
+        .neon-border-cyan {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+            border: 1px solid rgba(6, 182, 212, 0.8);
+        }
+        .neon-border-pink {
+            box-shadow: 0 0 15px rgba(236, 72, 153, 0.4);
+            border: 1px solid rgba(236, 72, 153, 0.8);
+        }
+        .neon-text-cyan {
+            text-shadow: 0 0 8px rgba(6, 182, 212, 0.8);
+        }
+        .neon-text-pink {
+            text-shadow: 0 0 8px rgba(236, 72, 153, 0.8);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #06b6d4;
+            border-radius: 3px;
+        }
+        .slide-enter {
+            animation: slideIn 0.35s ease-out forwards;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Pulsing grid background */
+        .grid-bg {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(6, 182, 212, 0.04) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(6, 182, 212, 0.04) 1px, transparent 1px);
+        }
+        
+        /* KaTeX spacing optimization to prevent awkward huge gaps */
+        .katex-display {
+            margin: 0.4em 0 !important;
+            padding: 0 !important;
+        }
+        .katex {
+            font-size: 1.05em;
+        }
+    </style>
+</head>
+<body class="grid-bg min-h-screen flex flex-col justify-between">
+
+    <!-- TOP NAV / STAT BAR -->
+    <header class="border-b border-cyan-500/20 bg-gray-950/80 backdrop-blur-md px-6 py-3 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-lg bg-cyan-950 border border-cyan-500 flex items-center justify-center neon-border-cyan animate-pulse">
+                    <i data-lucide="orbit" class="text-cyan-400 w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-orbitron font-bold text-lg text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-500 tracking-wider">TRIG-NAVIGATOR v3.0</h1>
+                    <p class="text-xs text-gray-400 font-code">PHASE 3: DOUBLE & HALF ANGLES • TRANSISI SMA</p>
+                </div>
+            </div>
+            
+            <!-- XP & LEVEL PROGRESS -->
+            <div class="flex items-center space-x-6">
+                <div class="text-right">
+                    <span class="text-xs text-gray-400 font-code block">OPERATIONAL RATING</span>
+                    <span class="text-sm font-bold text-pink-400 font-orbitron animate-pulse" id="rating-text">CHIP_COMPATIBLE</span>
+                </div>
+                <div class="bg-gray-900 border border-gray-800 rounded-full px-4 py-1.5 flex items-center space-x-2">
+                    <i data-lucide="zap" class="text-yellow-400 w-4 h-4"></i>
+                    <span class="font-orbitron font-bold text-yellow-400" id="xp-counter">0 XP</span>
+                </div>
+                <div class="hidden sm:flex flex-col w-32">
+                    <div class="flex justify-between text-[10px] text-gray-400 font-code mb-1">
+                        <span>PAGE PROGRESS</span>
+                        <span id="progress-percent">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                        <div id="progress-bar" class="bg-gradient-to-r from-cyan-500 to-pink-500 h-full w-0 transition-all duration-300"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN QUEST CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col justify-center">
+        <div class="bg-gray-950/70 border border-cyan-500/10 rounded-2xl p-6 backdrop-blur-lg min-h-[550px] flex flex-col justify-between slide-enter relative overflow-hidden" id="card-container">
+            <!-- Neon Accent Corners -->
+            <div class="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-cyan-500"></div>
+            <div class="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-pink-500"></div>
+            <div class="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-pink-500"></div>
+            <div class="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-cyan-500"></div>
+
+            <!-- DYNAMIC SLIDE CONTENT -->
+            <div id="slide-content" class="flex-1 flex flex-col justify-center">
+                <!-- Content injected dynamically via JS -->
+            </div>
+        </div>
+    </main>
+
+    <!-- BOTTOM STEERING / NAVIGATION CONTROL -->
+    <footer class="border-t border-cyan-500/20 bg-gray-950/95 py-4 px-6 sticky bottom-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <!-- Slide Index Explorer (Fast Nav) -->
+            <div class="flex items-center space-x-2">
+                <span class="text-xs text-gray-400 font-code">SECTOR:</span>
+                <select id="slide-selector" onchange="jumpToSlide(this.value)" class="bg-gray-900 border border-cyan-500/30 text-cyan-400 font-orbitron rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-400">
+                    <!-- Dropdown options populated by JS -->
+                </select>
+                <span class="text-xs text-gray-500 font-code" id="page-num-indicator">PAGE 1/35</span>
+            </div>
+
+            <!-- Nav Buttons -->
+            <div class="flex items-center space-x-4 w-full sm:w-auto justify-end">
+                <button onclick="prevSlide()" id="btn-prev" class="px-5 py-2 rounded-lg bg-gray-900 border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10 transition flex items-center space-x-2 font-orbitron disabled:opacity-30 disabled:pointer-events-none">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    <span>BACK</span>
+                </button>
+                <button onclick="nextSlide()" id="btn-next" class="px-6 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-pink-500 text-white font-bold hover:brightness-110 transition flex items-center space-x-2 font-orbitron neon-border-cyan">
+                    <span>NEXT</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- INTERACTIVE GAME LOGIC SCRIPT -->
+    <script>
+        // Global Game State
+        let currentSlide = 0;
+        let xp = 0;
+        let scoreQuest = [false, false, false, false, false, false, false]; // Track exercises progress
+        let username = "AstralRanger";
+
+        // 35 Pages Complete Curriculum Matrix with fully double-escaped LaTeX formulas
+        const slides = [
+            // SECTOR 01: INTRO & OBJECTIVES (1-3)
+            {
+                id: 1,
+                title: "Cyberpunk Space Quest: Phase 3",
+                subtitle: "Sudut Ganda & Sudut Tengahan",
+                type: "hero",
+                content: `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                        <div class="space-y-4">
+                            <span class="px-3 py-1 bg-cyan-950 border border-cyan-500 text-cyan-400 text-xs font-code rounded">MODUL TRIG-ADVANCE ONLINE</span>
+                            <h2 class="text-4xl md:text-5xl font-orbitron font-extrabold tracking-wider neon-text-cyan">THE NEXT WAVE</h2>
+                            <p class="text-gray-300 leading-relaxed text-sm">
+                                Selamat datang kembali, Navigator! Kamu telah menguasai jumlah, selisih, dan perkalian fungsi trigonometri. Namun, radar kapal kita mendeteksi anomali fraktal bintang yang berputar ganda dan paruh sudut!
+                            </p>
+                            <p class="text-xs text-gray-400 leading-relaxed">
+                                Di babak ini, kita akan membongkar rumus eksak untuk Sudut Ganda ($2\\alpha$) and Sudut Tengahan ($\\frac{1}{2}\\alpha$) menggunakan landasan matematis super presisi. Bersiaplah untuk menaikkan level kecerdasan koordinatmu!
+                            </p>
+                            <div class="flex space-x-4">
+                                <button onclick="nextSlide();" class="px-6 py-3 bg-gradient-to-r from-cyan-500 to-pink-500 rounded-lg text-white font-bold font-orbitron hover:shadow-lg hover:shadow-cyan-500/30 transition flex items-center space-x-2">
+                                    <span>MULAI MISI</span>
+                                    <i data-lucide="compass" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex justify-center">
+                            <!-- Glowing Reactor Engine SVG -->
+                            <svg class="w-64 h-64 md:w-80 md:h-80 animate-[spin_30s_linear_infinite]" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="100" cy="100" r="95" stroke="#0891b2" stroke-width="1.5" stroke-dasharray="10 5" />
+                                <circle cx="100" cy="100" r="75" stroke="#db2777" stroke-width="3" stroke-dasharray="30 15" />
+                                <circle cx="100" cy="100" r="55" stroke="#06b6d4" stroke-width="1" />
+                                <polygon points="100,25 165,138 35,138" stroke="#facc15" stroke-width="2" fill="rgba(250, 204, 21, 0.04)" />
+                                <polygon points="100,175 165,62 35,62" stroke="#06b6d4" stroke-width="1" fill="rgba(6, 182, 212, 0.04)" />
+                                <circle cx="100" cy="100" r="8" fill="#e11d48" class="animate-ping" />
+                            </svg>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 2,
+                title: "Otorisasi ID Navigator",
+                type: "input-form",
+                content: `
+                    <div class="max-w-md mx-auto space-y-6">
+                        <div class="text-center">
+                            <i data-lucide="lock" class="w-12 h-12 text-pink-500 mx-auto mb-2"></i>
+                            <h3 class="text-2xl font-orbitron font-bold text-white">DEKRIF OPERATOR BARU</h3>
+                            <p class="text-xs text-gray-400 font-code">Registrasikan Callsign navigasimu untuk melisensi modul.</p>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-xs font-code text-cyan-400 block mb-1">CALLSIGN CODENAME</label>
+                                <input id="nav-name" type="text" value="AstralRanger" class="w-full bg-gray-900 border border-cyan-500/50 rounded-lg p-3 text-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-code">
+                            </div>
+                            <button onclick="saveProfile()" class="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold font-orbitron rounded-lg transition neon-border-cyan">
+                                VERIFIKASI CODENAME
+                            </button>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 3,
+                title: "Tujuan Sektor Pembelajaran (Fase F)",
+                type: "info",
+                content: `
+                    <div class="space-y-6">
+                        <h3 class="text-2xl font-orbitron font-bold text-cyan-400">Peta Kemampuan Fase F Kurikulum Merdeka</h3>
+                        <p class="text-sm text-gray-300">
+                            Navigator pintar dituntut menguasai tiga domain keahlian di Sektor 3 ini:
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="p-4 bg-gray-900/50 border border-gray-800 rounded-xl space-y-2">
+                                <span class="text-pink-500 font-bold font-orbitron text-lg">01</span>
+                                <h4 class="font-bold text-white">Analisis Sudut Ganda</h4>
+                                <p class="text-xs text-gray-400 leading-relaxed">Menguraikan sudut bertingkat $2\\alpha$ menjadi fungsi tunggal tanpa tabel kalkulator.</p>
+                            </div>
+                            <div class="p-4 bg-gray-900/50 border border-gray-800 rounded-xl space-y-2">
+                                <span class="text-cyan-400 font-bold font-orbitron text-lg">02</span>
+                                <h4 class="font-bold text-white">Analisis Sudut Paruh</h4>
+                                <p class="text-xs text-gray-400 leading-relaxed">Menembus pembelokan sudut $\\frac{1}{2}\\alpha$ dari nilai kosinus sudut referensi dasar.</p>
+                            </div>
+                            <div class="p-4 bg-gray-900/50 border border-gray-800 rounded-xl space-y-2">
+                                <span class="text-yellow-400 font-bold font-orbitron text-lg">03</span>
+                                <h4 class="font-bold text-white">Manipulasi Identitas</h4>
+                                <p class="text-xs text-gray-400 leading-relaxed">Membuktikan keabsahan fungsi trigonometri fraktal secara murni dan logis.</p>
+                            </div>
+                        </div>
+                        <div class="bg-cyan-950/20 border border-cyan-500/30 p-3 rounded-lg text-xs font-code text-cyan-400">
+                            <strong>[NAV-INFO]</strong>: Pembelajaran ini adalah prasyarat krusial sebelum kamu mempelajari limit trigonometri dan kalkulus turunan di tingkat selanjutnya.
+                        </div>
+                    </div>
+                `
+            },
+
+            // SECTOR 02: WARM-UP (4 SOAL) (4-7)
+            {
+                id: 4,
+                title: "Warm-Up Quest 1: Sudut Istimewa Dasar",
+                type: "quiz",
+                content: `
+                    <div class="space-y-4">
+                        <p class="text-lg text-gray-200">Berapakah nilai eksak dari perkalian berikut?</p>
+                        <div class="my-4 p-4 bg-gray-900/60 rounded-lg text-center text-2xl font-orbitron text-pink-400">
+                            $$\\sin 30^\\circ \\cdot \\cos 30^\\circ = \\dots$$
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <button onclick="answerWarm(1, true)" class="p-4 bg-gray-900 border border-cyan-500/30 rounded-xl hover:border-cyan-400 transition text-left font-orbitron text-cyan-300">
+                                A. $$\\frac{1}{4}\\sqrt{3}$$
+                            </button>
+                            <button onclick="answerWarm(1, false)" class="p-4 bg-gray-900 border border-cyan-500/30 rounded-xl hover:border-cyan-400 transition text-left font-orbitron text-cyan-300">
+                                B. $$\\frac{1}{2}\\sqrt{3}$$
+                            </button>
+                            <button onclick="answerWarm(1, false)" class="p-4 bg-gray-900 border border-cyan-500/30 rounded-xl hover:border-cyan-400 transition text-left font-orbitron text-cyan-300">
+                                C. $$\\frac{1}{4}$$
+                            </button>
+                            <button onclick="answerWarm(1, false)" class="p-4 bg-gray-900 border border-cyan-500/30 rounded-xl hover:border-cyan-400 transition text-left font-orbitron text-cyan-300">
+                                D. $$\\frac{1}{2}$$
+                            </button>
+                        </div>
+                        <div id="warm1-feedback" class="mt-4 hidden p-3 rounded-lg text-sm font-code"></div>
+                    </div>
+                `
+            },
+            {
+                id: 5,
+                title: "Warm-Up Quest 2: Identitas Kuadrat",
+                type: "quiz",
+                content: `
+                    <div class="space-y-4">
+                        <p class="text-lg text-gray-200">Gunakan Identitas Pythagoras dasar untuk mencari hubungan berikut:</p>
+                        <div class="my-4 p-4 bg-gray-900/60 rounded-lg text-center text-2xl font-orbitron text-yellow-400">
+                            $$1 - \\cos^2 \\alpha = \\dots$$
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <button onclick="answerWarm(2, false)" class="p-4 bg-gray-900 border border-cyan-500/30 rounded-xl hover:border-cyan-400 transition text-left font-orbitron text-cyan-300">
+                                A. $$\\cos^2 \\alpha$$
+                            </button>
+                            <button onclick="answerWarm(2, true)" class="p-4 bg-gray-900 border border-cyan-500/30 rounded-xl hover:border-cyan-400 transition text-left font-orbitron text-cyan-300">
+                                B. $$\\sin^2 \\alpha$$
+                            </button>
+                            <button onclick="answerWarm(2, false)" class="p-4 bg-gray-900 border border-cyan-500/30 rounded-xl hover:border-cyan-400 transition text-left font-orbitron text-cyan-300">
+                                C. $$\\tan^2 \\alpha$$
+                            </button>
+                            <button onclick="answerWarm(2, false)" class="p-4 bg-gray-900 border border-cyan-500/30 rounded-xl hover:border-cyan-400 transition text-left font-orbitron text-cyan-300">
+                                D. $$-\\sin^2 \\alpha$$
+                            </button>
+                        </div>
+                        <div id="warm2-feedback" class="mt-4 hidden p-3 rounded-lg text-sm font-code"></div>
+                    </div>
+                `
+            },
+            {
+                id: 6,
+                title: "Warm-Up Quest 3: Rumus Jumlah Sudut Sinus",
+                type: "quiz",
+                content: `
+                    <div class="space-y-4">
+                        <p class="text-lg text-gray-200">Ingat kembali rumus dasar jumlah sudut untuk sinus:</p>
+                        <div class="my-4 p-4 bg-gray-900/60 rounded-lg text-center text-2xl font-orbitron text-cyan-400">
+                            $$\\sin(\\alpha + \\beta) = \\dots$$
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <button onclick="answerWarm(3, false)" class="p-4 bg-gray-900 border border-cyan-500/30 rounded-xl hover:border-cyan-400 transition text-left text-xs font-code text-cyan-300">
+                                A. $$\\cos\\alpha\\cos\\beta - \\sin\\alpha\\sin\\beta$$
+                            </button>
+                            <button onclick="answerWarm(3, true)" class="p-4 bg-gray-900 border border-cyan-500/30 rounded-xl hover:border-cyan-400 transition text-left text-xs font-code text-cyan-300">
+                                B. $$\\sin\\alpha\\cos\\beta + \\cos\\alpha\\sin\\beta$$
+                            </button>
+                            <button onclick="answerWarm(3, false)" class="p-4 bg-gray-900 border border-cyan-500/30 rounded-xl hover:border-cyan-400 transition text-left text-xs font-code text-cyan-300">
+                                C. $$\\sin\\alpha\\cos\\beta - \\cos\\alpha\\sin\\beta$$
+                            </button>
+                            <button onclick="answerWarm(3, false)" class="p-4 bg-gray-900 border border-cyan-500/30 rounded-xl hover:border-cyan-400 transition text-left text-xs font-code text-cyan-300">
+                                D. $$\\cos\\alpha\\cos\\beta + \\sin\\alpha\\sin\\beta$$
+                            </button>
+                        </div>
+                        <div id="warm3-feedback" class="mt-4 hidden p-3 rounded-lg text-sm font-code"></div>
+                    </div>
+                `
+            },
+            {
+                id: 7,
+                title: "Warm-Up Quest 4: Aturan Tanda Kuadran IV",
+                type: "quiz",
+                content: `
+                    <div class="space-y-4">
+                        <p class="text-lg text-gray-200">Jika sudut $\\alpha$ berada di Kuadran IV ($270^\\circ < \\alpha < 360^\\circ$), manakah yang bernilai positif?</p>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button onclick="answerWarm(4, false)" class="p-4 bg-gray-900 border border-cyan-500/30 rounded-xl hover:border-cyan-400 transition text-center font-orbitron text-cyan-300">
+                                A. $\\sin\\alpha$
+                            </button>
+                            <button onclick="answerWarm(4, true)" class="p-4 bg-gray-900 border border-cyan-500/30 rounded-xl hover:border-cyan-400 transition text-center font-orbitron text-cyan-300">
+                                B. $\\cos\\alpha$
+                            </button>
+                            <button onclick="answerWarm(4, false)" class="p-4 bg-gray-900 border border-cyan-500/30 rounded-xl hover:border-cyan-400 transition text-center font-orbitron text-cyan-300">
+                                C. $\\tan\\alpha$
+                            </button>
+                            <button onclick="answerWarm(4, false)" class="p-4 bg-gray-900 border border-cyan-500/30 rounded-xl hover:border-cyan-400 transition text-center font-orbitron text-cyan-300">
+                                D. Tidak ada yang positif
+                            </button>
+                        </div>
+                        <div id="warm4-feedback" class="mt-4 hidden p-3 rounded-lg text-sm font-code"></div>
+                    </div>
+                `
+            },
+
+            // SECTOR 03: REAL-WORLD CONNECTIONS (3 EXAMPLES) (8-10)
+            {
+                id: 8,
+                title: "Dunia Nyata 1: Robotika Berengsel Ganda",
+                type: "info",
+                content: `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                        <div class="space-y-3">
+                            <h3 class="text-2xl font-orbitron font-bold text-cyan-400">Kinematika Lengan Robot</h3>
+                            <p class="text-sm text-gray-300 leading-relaxed">
+                                Pada pabrik perakitan mobil futuristik, lengan robot bergerak dengan sudut berengsel ganda. Ketika sendi motor pertama berputar sejauh $\\alpha$ dan sendi kedua menyelaraskan sudut sebesar $2\\alpha$, komputer pusat harus menghitung koordinat ujung pencengkeram secara instan.
+                            </p>
+                            <p class="text-xs text-gray-400 font-code">
+                                Alih-alih menghitung dua koordinat rotasi terpisah yang memperlambat laju CPU, sistem menggunakan rumus sudut ganda untuk mengonversinya langsung menjadi satu baris instruksi linear!
+                            </p>
+                        </div>
+                        <div class="flex justify-center">
+                            <!-- Robotic Arm SVG -->
+                            <svg class="w-48 h-48" viewBox="0 0 100 100">
+                                <circle cx="10" cy="90" r="8" fill="#1e293b" stroke="#06b6d4" stroke-width="2"/>
+                                <line x1="10" y1="90" x2="45" y2="55" stroke="#06b6d4" stroke-width="4"/>
+                                <circle cx="45" cy="55" r="6" fill="#1e293b" stroke="#db2777" stroke-width="2"/>
+                                <line x1="45" y1="55" x2="85" y2="40" stroke="#db2777" stroke-width="3"/>
+                                <path d="M 85,35 L 85,45 L 90,40 Z" fill="#facc15"/>
+                                <text x="32" y="80" fill="#f3f4f6" font-family="Orbitron" font-size="8">α</text>
+                                <text x="65" y="45" fill="#f3f4f6" font-family="Orbitron" font-size="8">2α</text>
+                            </svg>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 9,
+                title: "Dunia Nyata 2: Desain Satelit Pelacak Sudut Paruh",
+                type: "info",
+                content: `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                        <div class="space-y-3">
+                            <h3 class="text-2xl font-orbitron font-bold text-pink-500">Pembelokan Sinyal Satelit</h3>
+                            <p class="text-sm text-gray-300 leading-relaxed">
+                                Ketika satelit cuaca mengamati badai dari orbit, ia membagi sudut sapuan areanya menjadi paruh sudut ($\\frac{1}{2}\\alpha$) untuk melakukan kalibrasi resolusi sensor optik agar citra permukaan bumi tidak buram.
+                            </p>
+                            <p class="text-xs text-gray-400 font-code">
+                                Dengan membaca nilai elevasi normal satelit ($\\cos\\alpha$), sensor bisa secara instan menyetel fokal pembesaran lensa memakai algoritma rumus sudut tengahan.
+                            </p>
+                        </div>
+                        <div class="flex justify-center">
+                            <svg class="w-48 h-48" viewBox="0 0 100 100">
+                                <circle cx="50" cy="15" r="10" fill="#db2777"/>
+                                <path d="M 50,25 L 20,80 L 80,80 Z" fill="rgba(219,39,119,0.05)" stroke="#db2777" stroke-width="1" stroke-dasharray="2 2"/>
+                                <line x1="50" y1="25" x2="50" y2="80" stroke="#facc15" stroke-width="1.5"/>
+                                <text x="40" y="45" fill="#f3f4f6" font-family="Orbitron" font-size="8">½α</text>
+                                <text x="60" y="45" fill="#f3f4f6" font-family="Orbitron" font-size="8">½α</text>
+                            </svg>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 10,
+                title: "Dunia Nyata 3: Gaya Sentripetal Rollercoaster",
+                type: "info",
+                content: `
+                    <div class="space-y-4">
+                        <h3 class="text-2xl font-orbitron font-bold text-yellow-500">Rancangan Loop Vertikal</h3>
+                        <p class="text-sm text-gray-300 leading-relaxed">
+                            Dalam desain teknik mesin wahana taman hiburan, bentuk lingkaran loop rollercoaster tidak boleh bulat sempurna melainkan berbentuk *Clothoid Loop*. Rasio kelengkungan diatur menggunakan fungsi harmonik ganda ($2\\alpha$) untuk meminimalkan beban gaya gravitasi (G-force) ekstrem pada leher pengendara.
+                        </p>
+                        <div class="p-3 bg-gray-900 rounded-xl border border-gray-800 text-xs font-code text-cyan-400">
+                            Persamaan kemiringan rel pada koordinat waktu ditentukan secara presisi lewat rasio perbandingan $\\sin 2t$ dan $\\cos 2t$.
+                        </div>
+                    </div>
+                `
+            },
+
+            // SECTOR 04: KONSEP SUDUT GANDA (11-15)
+            {
+                id: 11,
+                title: "Konsep Sudut Ganda: Sinus (2α)",
+                type: "info",
+                content: `
+                    <div class="space-y-4">
+                        <p class="text-sm text-gray-300">
+                            Bagaimana cara mendapatkan rumus $\\sin 2\\alpha$? Kita cukup memanfaatkan rumus jumlah dua sudut yang sudah kita pelajari sebelumnya dengan mengasumsikan $\\beta = \\alpha$.
+                        </p>
+                        <div class="bg-gray-900/60 p-4 rounded-xl border border-cyan-500/20 space-y-2 font-code">
+                            <p class="text-xs text-gray-500">// Langkah Penurunan:</p>
+                            <p class="text-sm">$\\sin(\\alpha + \\beta) = \\sin\\alpha\\cos\\beta + \\cos\\alpha\\sin\\beta$</p>
+                            <p class="text-sm">Ganti $\\beta$ dengan $\\alpha$:</p>
+                            <p class="text-sm">$\\sin(\\alpha + \\alpha) = \\sin\\alpha\\cos\\alpha + \\cos\\alpha\\sin\\alpha$</p>
+                        </div>
+                        <div class="text-center p-4 bg-gray-900 border border-cyan-500/40 rounded-xl">
+                            <p class="text-xs text-cyan-400 font-code tracking-widest">[ HASIL AKHIR ]</p>
+                            <h4 class="text-2xl sm:text-3xl font-orbitron text-cyan-400 font-bold">$$\\sin 2\\alpha = 2\\sin\\alpha\\cos\\alpha$$</h4>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 12,
+                title: "Konsep Sudut Ganda: Cosinus (2α)",
+                type: "info",
+                content: `
+                    <div class="space-y-4">
+                        <p class="text-sm text-gray-300 leading-relaxed">
+                            Untuk $\\cos 2\\alpha$, kita mendapatkan tiga variasi formula yang semuanya sangat krusial and saling menggantikan tergantung variabel soal yang diketahui!
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="p-4 bg-gray-900/50 border border-pink-500/20 rounded-xl text-center space-y-2">
+                                <span class="text-[10px] text-pink-400 font-code tracking-widest block">VARIASI 1 (DASAR)</span>
+                                <p class="text-lg font-bold font-orbitron">$$\\cos 2\\alpha = \\cos^2\\alpha - \\sin^2\\alpha$$</p>
+                            </div>
+                            <div class="p-4 bg-gray-900/50 border border-pink-500/20 rounded-xl text-center space-y-2">
+                                <span class="text-[10px] text-pink-400 font-code tracking-widest block">VARIASI 2 (SINUS)</span>
+                                <p class="text-lg font-bold font-orbitron">$$\\cos 2\\alpha = 1 - 2\\sin^2\\alpha$$</p>
+                            </div>
+                            <div class="p-4 bg-gray-900/50 border border-pink-500/20 rounded-xl text-center space-y-2">
+                                <span class="text-[10px] text-pink-400 font-code tracking-widest block">VARIASI 3 (COSINUS)</span>
+                                <p class="text-lg font-bold font-orbitron">$$\\cos 2\\alpha = 2\\cos^2\\alpha - 1$$</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-400 italic">
+                            *Catatan: Variasi 2 dan 3 diturutkan menggunakan identitas kuadrat dasar $\\sin^2\\alpha + \\cos^2\\alpha = 1$.
+                        </p>
+                    </div>
+                `
+            },
+            {
+                id: 13,
+                title: "Konsep Sudut Ganda: Tangen (2α)",
+                type: "info",
+                content: `
+                    <div class="space-y-4">
+                        <p class="text-sm text-gray-300">
+                            Untuk fungsi tangen sudut ganda, kita menggabungkan rumus pembagian tangen jumlah sudut:
+                        </p>
+                        <div class="bg-gray-900/60 p-4 rounded-xl border border-yellow-500/20 space-y-2 font-code">
+                            <p class="text-xs text-gray-500">// Langkah Penurunan:</p>
+                            <p class="text-sm">$\\tan(\\alpha + \\beta) = \\frac{\\tan\\alpha + \\tan\\beta}{1 - \\tan\\alpha\\tan\\beta}$</p>
+                            <p class="text-sm">Ganti $\\beta$ dengan $\\alpha$:</p>
+                            <p class="text-sm">$\\tan(\\alpha + \\alpha) = \\frac{\\tan\\alpha + \\tan\\alpha}{1 - \\tan\\alpha\\cdot\\tan\\alpha}$</p>
+                        </div>
+                        <div class="text-center p-4 bg-gray-900 border border-yellow-500/40 rounded-xl">
+                            <p class="text-xs text-yellow-400 font-code tracking-widest">[ HASIL AKHIR ]</p>
+                            <h4 class="text-2xl sm:text-3xl font-orbitron text-yellow-400 font-bold">$$\\tan 2\\alpha = \\frac{2\\tan\\alpha}{1 - \\tan^2\\alpha}$$</h4>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 14,
+                title: "Mnemonic Sederhana Sudut Ganda",
+                type: "info",
+                content: `
+                    <div class="space-y-4">
+                        <p class="text-sm text-gray-300">Gunakan pola jembatan ingatan ini agar kamu bisa mengingat ketiga rumus di kepala secara permanen:</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 font-code">
+                            <div class="p-3 bg-cyan-950/20 border border-cyan-500/30 rounded-lg">
+                                <span class="text-xs font-bold text-cyan-400">Sin Ganda</span>
+                                <p class="text-xs text-gray-400 mt-1">"Dua Kali Sin-Cos"</p>
+                                <p class="text-sm font-bold text-cyan-300 mt-2">$$2\\sin A\\cos A$$</p>
+                            </div>
+                            <div class="p-3 bg-pink-950/20 border border-pink-500/30 rounded-lg">
+                                <span class="text-xs font-bold text-pink-400">Cos Ganda</span>
+                                <p class="text-xs text-gray-400 mt-1">"Cos Kuadrat dikurang Sin Kuadrat"</p>
+                                <p class="text-sm font-bold text-pink-300 mt-2">$$\\cos^2 A - \\sin^2 A$$</p>
+                            </div>
+                            <div class="p-3 bg-yellow-950/20 border border-yellow-500/30 rounded-lg">
+                                <span class="text-xs font-bold text-yellow-400">Tan Ganda</span>
+                                <p class="text-xs text-gray-400 mt-1">"Dua Tan dibagi Satu kurang Tan Kuadrat"</p>
+                                <p class="text-sm font-bold text-yellow-300 mt-2">$$\\frac{2\\tan A}{1 - \\tan^2 A}$$</p>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 15,
+                title: "Tantangan Mini-Konsep: Struktur Sin 2A",
+                type: "quiz",
+                content: `
+                    <div class="space-y-4">
+                        <p class="text-lg text-gray-200">Jika kamu memiliki ekspresi berikut, berapakah bentuk sederhananya?</p>
+                        <div class="my-4 p-4 bg-gray-900/60 rounded-lg text-center text-2xl font-orbitron text-pink-400">
+                            $$6\\sin 15^\\circ \\cos 15^\\circ = \\dots$$
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <button onclick="answerMini(1, false)" class="p-4 bg-gray-900 border border-cyan-500/30 rounded-xl hover:border-cyan-400 transition text-left font-orbitron text-cyan-300">
+                                A. $3\\sin 15^\\circ$
+                            </button>
+                            <button onclick="answerMini(1, true)" class="p-4 bg-gray-900 border border-cyan-500/30 rounded-xl hover:border-cyan-400 transition text-left font-orbitron text-cyan-300">
+                                B. $3\\sin 30^\\circ$ (atau $1.5$)
+                            </button>
+                            <button onclick="answerMini(1, false)" class="p-4 bg-gray-900 border border-cyan-500/30 rounded-xl hover:border-cyan-400 transition text-left font-orbitron text-cyan-300">
+                                C. $6\\sin 30^\\circ$
+                            </button>
+                            <button onclick="answerMini(1, false)" class="p-4 bg-gray-900 border border-cyan-500/30 rounded-xl hover:border-cyan-400 transition text-left font-orbitron text-cyan-300">
+                                D. $\\sin 90^\\circ$
+                            </button>
+                        </div>
+                        <div id="mini1-feedback" class="mt-4 hidden p-3 rounded-lg text-sm font-code"></div>
+                    </div>
+                `
+            },
+
+            // SECTOR 05: KONSEP SUDUT TENGAHAN (16-20)
+            {
+                id: 16,
+                title: "Konsep Sudut Tengahan: Sinus (½α)",
+                type: "info",
+                content: `
+                    <div class="space-y-4">
+                        <p class="text-sm text-gray-300 leading-relaxed">
+                            Untuk mendapatkan rumus setengah sudut (tengahan), kita memanipulasi rumus cosinus ganda:
+                            $\\cos 2\\theta = 1 - 2\\sin^2\\theta$
+                        </p>
+                        <p class="text-xs text-gray-400 leading-relaxed">
+                            Ganti $\\theta$ dengan $\\frac{1}{2}\\alpha$, maka kita dapatkan $\\cos\\alpha = 1 - 2\\sin^2\\frac{1}{2}\\alpha$. Kita putar ruasnya:
+                        </p>
+                        <div class="bg-gray-900/60 p-4 rounded-xl border border-pink-500/20 space-y-2 font-code">
+                            $2\\sin^2\\frac{1}{2}\\alpha = 1 - \\cos\\alpha \\implies \\sin^2\\frac{1}{2}\\alpha = \\frac{1 - \\cos\\alpha}{2}$
+                        </div>
+                        <div class="text-center p-4 bg-gray-900 border border-pink-500/40 rounded-xl">
+                            <p class="text-xs text-pink-400 font-code tracking-widest">[ HASIL AKHIR ]</p>
+                            <h4 class="text-2xl sm:text-3xl font-orbitron text-pink-400 font-bold">$$\\sin\\frac{1}{2}\\alpha = \\pm\\sqrt{\\frac{1 - \\cos\\alpha}{2}}$$</h4>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 17,
+                title: "Konsep Sudut Tengahan: Cosinus (½α)",
+                type: "info",
+                content: `
+                    <div class="space-y-4">
+                        <p class="text-sm text-gray-300 leading-relaxed">
+                            Dengan cara yang persis sama, kita memanipulasi variasi ketiga cosinus ganda:
+                            $\\cos 2\\theta = 2\\cos^2\\theta - 1$
+                        </p>
+                        <p class="text-xs text-gray-400 leading-relaxed">
+                            Ganti $\\theta$ dengan $\\frac{1}{2}\\alpha$, maka kita dapatkan $\\cos\\alpha = 2\\cos^2\\frac{1}{2}\\alpha - 1$. Kita putar ruasnya:
+                        </p>
+                        <div class="bg-gray-900/60 p-4 rounded-xl border border-cyan-500/20 space-y-2 font-code">
+                            $2\\cos^2\\frac{1}{2}\\alpha = 1 + \\cos\\alpha \\implies \\cos^2\\frac{1}{2}\\alpha = \\frac{1 + \\cos\\alpha}{2}$
+                        </div>
+                        <div class="text-center p-4 bg-gray-900 border border-cyan-500/40 rounded-xl">
+                            <p class="text-xs text-cyan-400 font-code tracking-widest">[ HASIL AKHIR ]</p>
+                            <h4 class="text-2xl sm:text-3xl font-orbitron text-cyan-400 font-bold">$$\\cos\\frac{1}{2}\\alpha = \\pm\\sqrt{\\frac{1 + \\cos\\alpha}{2}}$$</h4>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 18,
+                title: "Konsep Sudut Tengahan: Tangen (½α)",
+                type: "info",
+                content: `
+                    <div class="space-y-4">
+                        <p class="text-sm text-gray-300 leading-relaxed">
+                            Karena $\\tan\\theta = \\frac{\\sin\\theta}{\\cos\\theta}$, maka tangen setengah sudut diperoleh dari pembagian akar sinus dan cosinus setengah sudut:
+                        </p>
+                        <div class="bg-gray-900/60 p-4 rounded-xl border border-yellow-500/20 space-y-2 text-center text-lg">
+                            $$\\tan\\frac{1}{2}\\alpha = \\pm\\sqrt{\\frac{1 - \\cos\\alpha}{1 + \\cos\\alpha}}$$
+                        </div>
+                        <p class="text-xs text-gray-400 leading-relaxed">
+                            Melalui proses rasionalisasi penyebut di PDF halaman 5, kita juga mendapatkan 2 rumus alternatif yang **bebas akar**:
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 font-code">
+                            <div class="p-3 bg-gray-900 rounded-lg text-center">
+                                <span class="text-xs text-yellow-400">Alternatif A</span>
+                                <p class="text-sm font-bold mt-1">$$\\tan\\frac{1}{2}\\alpha = \\frac{1 - \\cos\\alpha}{\\sin\\alpha}$$</p>
+                            </div>
+                            <div class="p-3 bg-gray-900 rounded-lg text-center">
+                                <span class="text-xs text-yellow-400">Alternatif B</span>
+                                <p class="text-sm font-bold mt-1">$$\\tan\\frac{1}{2}\\alpha = \\frac{\\sin\\alpha}{1 + \\cos\\alpha}$$</p>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 19,
+                title: "Menentukan Tanda Positif atau Negatif (±)",
+                type: "info",
+                content: `
+                    <div class="space-y-4">
+                        <h4 class="text-lg font-orbitron font-bold text-pink-500">Kapan Kita Menggunakan Tanda (+) atau (-)?</h4>
+                        <p class="text-sm text-gray-300 leading-relaxed">
+                            Simbol $\\pm$ pada rumus sudut tengahan **bukan** berarti memiliki dua jawaban sekaligus! Tanda tersebut ditentukan murni oleh **lokasi kuadrat di mana sudut setengah tersebut berada**.
+                        </p>
+                        <div class="bg-gray-900 p-4 rounded-xl border border-gray-800 space-y-2 text-xs font-code">
+                            <p class="text-yellow-400">// Contoh Analisis:</p>
+                            <p>Jika $270^\\circ < \\alpha < 360^\\circ$ (Kuadran IV), maka jika kita bagi 2:</p>
+                            <p class="text-cyan-400">$135^\\circ < \\frac{1}{2}\\alpha < 180^\\circ$ (Berada di Kuadran II!)</p>
+                            <p class="text-pink-400">Di Kuadran II, nilai kosinus harus negatif (-) dan sinus harus positif (+).</p>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 20,
+                title: "Sudut Tripel (Ekstensi Pengayaan)",
+                type: "info",
+                content: `
+                    <div class="space-y-4">
+                        <h4 class="text-lg font-orbitron font-bold text-yellow-500">Membelah Sudut Tiga Ganda (3α)</h4>
+                        <p class="text-sm text-slate-300 leading-relaxed">
+                            Berdasarkan penurunan di halaman 7 PDF, kita juga bisa melompat lebih jauh untuk mencari rumus sudut tripel ($3\\alpha$):
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="p-4 bg-gray-900/50 border border-cyan-500/20 rounded-xl space-y-2 text-center">
+                                <span class="text-xs font-code text-cyan-400 block">SINUS TRIPEL</span>
+                                <p class="text-xl font-bold font-orbitron">$$\\sin 3\\alpha = 3\\sin\\alpha - 4\\sin^3\\alpha$$</p>
+                            </div>
+                            <div class="p-4 bg-gray-900/50 border border-pink-500/20 rounded-xl space-y-2 text-center">
+                                <span class="text-xs font-code text-pink-400 block">COSINUS TRIPEL</span>
+                                <p class="text-xl font-bold font-orbitron">$$\\cos 3\\alpha = 4\\cos^3\\alpha - 3\\cos\\alpha$$</p>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+
+            // SECTOR 06: INTERACTIVE LABS (21-22)
+            {
+                id: 21,
+                title: "Simulator Sudut Ganda (Interactive Lab)",
+                type: "interactive-double",
+                content: `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                        <div class="space-y-4">
+                            <p class="text-xs text-gray-400 leading-relaxed">
+                                Geser slider sudut dasar untuk membandingkan posisi sinus sudut dasar $\\alpha$ dengan sudut ganda $2\\alpha$.
+                            </p>
+                            <div>
+                                <label class="text-xs font-code text-cyan-400 block mb-1">Sudut Dasar ($\\alpha$): <span id="val-alpha" class="font-bold text-white">30</span>°</label>
+                                <input type="range" id="slide-alpha" min="0" max="180" value="30" oninput="updateDoubleLab()" class="w-full accent-cyan-400 bg-gray-900">
+                            </div>
+                            <div class="p-3 bg-gray-900/80 rounded-xl space-y-2 font-code text-xs border border-cyan-500/10">
+                                <div class="flex justify-between items-center py-1.5 border-b border-gray-800">
+                                    <span class="text-gray-400">$\\sin\\alpha$</span>
+                                    <span class="text-white font-bold text-sm" id="out-sin-a">0.50</span>
+                                </div>
+                                <div class="flex justify-between items-center py-1.5 border-b border-gray-800">
+                                    <span class="text-gray-400">$\\cos\\alpha$</span>
+                                    <span class="text-white font-bold text-sm" id="out-cos-a">0.87</span>
+                                </div>
+                                <div class="flex justify-between items-center py-1.5 text-cyan-400 font-bold">
+                                    <span>$\\sin 2\\alpha = 2\\sin\\alpha\\cos\\alpha$</span>
+                                    <span class="neon-text-cyan text-sm" id="out-sin-2a">0.87</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-center flex-col items-center">
+                            <canvas id="doubleCanvas" width="220" height="220" class="border border-gray-800 bg-gray-950 rounded-lg neon-border-cyan"></canvas>
+                            <span class="text-[10px] text-gray-500 font-code mt-1">Garis Biru = $\\alpha$, Garis Merah = $2\\alpha$</span>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 22,
+                title: "Simulator Sudut Tengahan (Interactive Lab)",
+                type: "interactive-half",
+                content: `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                        <div class="space-y-4">
+                            <p class="text-xs text-gray-400 leading-relaxed">
+                                Geser slider sudut dasar untuk melihat efek pemotongan sudut paruh di unit lingkaran koordinat.
+                            </p>
+                            <div>
+                                <label class="text-xs font-code text-pink-500 block mb-1">Sudut Referensi ($\\alpha$): <span id="val-alpha-half" class="font-bold text-white">120</span>°</label>
+                                <input type="range" id="slide-alpha-half" min="0" max="360" value="120" oninput="updateHalfLab()" class="w-full accent-pink-500 bg-gray-900">
+                            </div>
+                            <div class="p-3 bg-gray-900/80 rounded-xl space-y-2 font-code text-xs border border-pink-500/10">
+                                <div class="flex justify-between items-center py-1.5 border-b border-gray-800">
+                                    <span class="text-gray-400">$\\cos\\alpha$</span>
+                                    <span class="text-white font-bold text-sm" id="out-cos-half">0.50</span>
+                                </div>
+                                <div class="flex justify-between items-center py-1.5 text-pink-400 font-bold">
+                                    <span>$\\sin\\frac{1}{2}\\alpha = \\sqrt{\\frac{1-\\cos\\alpha}{2}}$</span>
+                                    <span class="neon-text-pink text-sm" id="out-sin-half-calc">0.87</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-center flex-col items-center">
+                            <canvas id="halfCanvas" width="220" height="220" class="border border-gray-800 bg-gray-950 rounded-lg neon-border-pink"></canvas>
+                            <span class="text-[10px] text-gray-500 font-code mt-1">Garis Pink = $\\alpha$, Garis Kuning = $\\frac{1}{2}\\alpha$</span>
+                        </div>
+                    </div>
+                `
+            },
+
+            // SECTOR 07: BEDAH CONTOH SOAL (23-25)
+            {
+                id: 23,
+                title: "Bedah Contoh Soal 1 (PDF Halaman 2)",
+                type: "info",
+                content: `
+                    <div class="space-y-4">
+                        <div class="p-3 bg-cyan-950/40 border border-cyan-500/20 rounded">
+                            <span class="text-xs font-code text-cyan-400 block">CONTOH SOAL 01 (b)</span>
+                            <p class="text-md font-orbitron text-cyan-300">Tentukan nilai dari: $12\\sqrt{3}\\cos^2 15^\\circ - 6\\sqrt{3}$</p>
+                        </div>
+                        <div class="space-y-2 text-xs sm:text-sm text-gray-300 leading-relaxed">
+                            <p>1. Keluarkan faktor persekutuan $6\\sqrt{3}$:</p>
+                            <div class="p-2 bg-gray-900 rounded font-code">
+                                $$= 6\\sqrt{3}(2\\cos^2 15^\\circ - 1)$$
+                            </div>
+                            <p>2. Gunakan identitas ganda kosinus $2\\cos^2\\theta - 1 = \\cos 2\\theta$:</p>
+                            <div class="p-2 bg-gray-900 rounded font-code text-cyan-400">
+                                $$= 6\\sqrt{3} \\cdot \\cos 2(15^\\circ) = 6\\sqrt{3} \\cdot \\cos 30^\\circ$$
+                            </div>
+                            <p>3. Substitusi nilai istimewa $\\cos 30^\\circ = \\frac{1}{2}\\sqrt{3}$:</p>
+                            <p class="font-code text-green-400 font-bold">
+                                $$= 6\\sqrt{3} \\cdot \\left(\\frac{1}{2}\\sqrt{3}\\right) = 3 \\cdot 3 = 9$$
+                            </p>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 24,
+                title: "Bedah Contoh Soal 2 (PDF Halaman 2)",
+                type: "info",
+                content: `
+                    <div class="space-y-4">
+                        <div class="p-3 bg-pink-950/40 border border-pink-500/20 rounded">
+                            <span class="text-xs font-code text-pink-400 block">CONTOH SOAL 02</span>
+                            <p class="text-md font-orbitron text-pink-300">Jika $\\tan\\alpha = \\frac{1}{2}\\sqrt{3}$ (sudut lancip), tentukan nilai dari $\\sin 2\\alpha$!</p>
+                        </div>
+                        <div class="text-xs sm:text-sm text-gray-300 space-y-1.5 leading-relaxed">
+                            <p>1. Gambar segitiga siku-siku penolong dengan depan = $\\sqrt{3}$, samping = $2$.</p>
+                            <p>2. Cari sisi miring (Miring):</p>
+                            <p class="font-code text-pink-400">$\\text{Miring} = \\sqrt{2^2 + (\\sqrt{3})^2} = \\sqrt{7}$</p>
+                            <p>3. Dapatkan nilai sinus dan cosinus dasar:</p>
+                            <p class="font-code text-cyan-300">$\\sin\\alpha = \\frac{\\sqrt{3}}{\\sqrt{7}}, \\quad \\cos\\alpha = \\frac{2}{\\sqrt{7}}$</p>
+                            <p>4. Masukkan ke rumus ganda sinus:</p>
+                            <p class="font-code text-green-400 font-bold">
+                                $$\\sin 2\\alpha = 2\\sin\\alpha\\cos\\alpha = 2\\left(\\frac{\\sqrt{3}}{\\sqrt{7}}\\right)\\left(\\frac{2}{\\sqrt{7}}\\right) = \\frac{4}{7}\\sqrt{3}$$
+                            </p>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 25,
+                title: "Bedah Contoh Soal 3 (PDF Halaman 3)",
+                type: "info",
+                content: `
+                    <div class="space-y-4">
+                        <div class="p-3 bg-yellow-950/40 border border-yellow-500/20 rounded">
+                            <span class="text-xs font-code text-yellow-400 block">CONTOH SOAL 03</span>
+                            <p class="text-md font-orbitron text-yellow-300">Jika $\\cos\\alpha = -\\frac{1}{\\sqrt{3}}$ dengan $90^\\circ < \\alpha < 180^\\circ$ (Kuadran II), cari nilai $\\tan 2\\alpha$!</p>
+                        </div>
+                        <div class="text-xs sm:text-sm text-gray-300 space-y-1 leading-relaxed">
+                            <p>1. Cari panjang sisi depan lewat Pythagoras:</p>
+                            <p class="font-code text-yellow-400">$\\text{Depan} = \\sqrt{(\\sqrt{3})^2 - 1^2} = \\sqrt{2}$</p>
+                            <p>2. Tentukan tangen dasar di Kuadran II (bernilai negatif):</p>
+                            <p class="font-code text-pink-400">$\\tan\\alpha = -\\sqrt{2}$</p>
+                            <p>3. Masukkan ke rumus tangen ganda:</p>
+                            <p class="font-code text-green-400 font-bold">
+                                $$\\tan 2\\alpha = \\frac{2\\tan\\alpha}{1 - \\tan^2\\alpha} = \\frac{2(-\\sqrt{2})}{1 - (-\\sqrt{2})^2} = \\frac{-2\\sqrt{2}}{1 - 2} = 2\\sqrt{2}$$
+                            </p>
+                        </div>
+                    </div>
+                `
+            },
+
+            // SECTOR 08: LATIHAN SOAL INTERAKTIF (26-32)
+            {
+                id: 26,
+                title: "Latihan 1: Sudut Tengahan Cosinus",
+                type: "quiz-xp",
+                questIndex: 0,
+                content: `
+                    <div class="space-y-4">
+                        <div class="p-3 bg-gray-900 border border-gray-800 rounded-lg">
+                            <span class="text-xs font-code text-yellow-500">QUEST 1/7 • +100 XP</span>
+                            <p class="text-sm font-orbitron mt-1">Berapakah nilai eksak dari $\\cos 112.5^\\circ$?</p>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <button onclick="answerQuest(0, true)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-left hover:border-cyan-400 transition font-code">
+                                A. -1/2 * akar(2 - akar(2))
+                            </button>
+                            <button onclick="answerQuest(0, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-left hover:border-cyan-400 transition font-code">
+                                B. 1/2 * akar(2 - akar(2))
+                            </button>
+                            <button onclick="answerQuest(0, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-left hover:border-cyan-400 transition font-code">
+                                C. -1/2 * akar(2 + akar(2))
+                            </button>
+                            <button onclick="answerQuest(0, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-left hover:border-cyan-400 transition font-code">
+                                D. 1/2 * akar(2 + akar(2))
+                            </button>
+                        </div>
+                        <div id="quest0-feedback" class="hidden p-2.5 rounded font-code text-xs"></div>
+                    </div>
+                `
+            },
+            {
+                id: 27,
+                title: "Latihan 2: Sudut Ganda Cos 67.5°",
+                type: "quiz-xp",
+                questIndex: 1,
+                content: `
+                    <div class="space-y-4">
+                        <div class="p-3 bg-gray-900 border border-gray-800 rounded-lg">
+                            <span class="text-xs font-code text-yellow-500">QUEST 2/7 • +120 XP</span>
+                            <p class="text-sm font-orbitron mt-1">Sederhanakan ekspresi berikut: $4\\cos^2 67.5^\\circ - 4\\sin^2 67.5^\\circ$!</p>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <button onclick="answerQuest(1, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-left hover:border-cyan-400 transition font-code">
+                                A. 2 * akar(2)
+                            </button>
+                            <button onclick="answerQuest(1, true)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-left hover:border-cyan-400 transition font-code">
+                                B. -2 * akar(2)
+                            </button>
+                            <button onclick="answerQuest(1, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-left hover:border-cyan-400 transition font-code">
+                                C. akar(2)
+                            </button>
+                            <button onclick="answerQuest(1, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-left hover:border-cyan-400 transition font-code">
+                                D. -akar(2)
+                            </button>
+                        </div>
+                        <div id="quest1-feedback" class="hidden p-2.5 rounded font-code text-xs"></div>
+                    </div>
+                `
+            },
+            {
+                id: 28,
+                title: "Latihan 3: Nilai Eksak Tan 22.5°",
+                type: "quiz-xp",
+                questIndex: 2,
+                content: `
+                    <div class="space-y-4">
+                        <div class="p-3 bg-gray-900 border border-gray-800 rounded-lg">
+                            <span class="text-xs font-code text-yellow-500">QUEST 3/7 • +150 XP</span>
+                            <p class="text-sm font-orbitron mt-1">Berapakah nilai eksak dari $\\tan 22.5^\\circ$?</p>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <button onclick="answerQuest(2, true)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-left hover:border-cyan-400 transition font-code">
+                                A. akar(2) - 1
+                            </button>
+                            <button onclick="answerQuest(2, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-left hover:border-cyan-400 transition font-code">
+                                B. akar(2) + 1
+                            </button>
+                            <button onclick="answerQuest(2, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-left hover:border-cyan-400 transition font-code">
+                                C. 1 - akar(2)
+                            </button>
+                            <button onclick="answerQuest(2, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-left hover:border-cyan-400 transition font-code">
+                                D. 1/2 * akar(2)
+                            </button>
+                        </div>
+                        <div id="quest2-feedback" class="hidden p-2.5 rounded font-code text-xs"></div>
+                    </div>
+                `
+            },
+            {
+                id: 29,
+                title: "Latihan 4: Mencari Tan 4α",
+                type: "quiz-xp",
+                questIndex: 3,
+                content: `
+                    <div class="space-y-4">
+                        <div class="p-3 bg-gray-900 border border-gray-800 rounded-lg">
+                            <span class="text-xs font-code text-yellow-500">QUEST 4/7 • +200 XP</span>
+                            <p class="text-sm font-orbitron mt-1">Jika $2\\cos^2\\alpha = 1 + 2\\sin 2\\alpha$, tentukan nilai dari $\\tan 4\\alpha$!</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 text-xs">
+                            <button onclick="answerQuest(3, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-center hover:border-cyan-400 transition font-code">
+                                A. 3/4
+                            </button>
+                            <button onclick="answerQuest(3, true)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-center hover:border-cyan-400 transition font-code">
+                                B. 4/3
+                            </button>
+                            <button onclick="answerQuest(3, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-center hover:border-cyan-400 transition font-code">
+                                C. -3/4
+                            </button>
+                            <button onclick="answerQuest(3, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-center hover:border-cyan-400 transition font-code">
+                                D. -4/3
+                            </button>
+                        </div>
+                        <div id="quest3-feedback" class="hidden p-2.5 rounded font-code text-xs"></div>
+                    </div>
+                `
+            },
+            {
+                id: 30,
+                title: "Latihan 5: Pembuktian Identitas",
+                type: "quiz-xp",
+                questIndex: 4,
+                content: `
+                    <div class="space-y-4">
+                        <div class="p-3 bg-gray-900 border border-gray-800 rounded-lg">
+                            <span class="text-xs font-code text-yellow-500">QUEST 5/7 • +180 XP</span>
+                            <p class="text-sm font-orbitron mt-1">Sederhanakan pecahan identitas berikut: $\\frac{1 - \\tan^2\\alpha}{1 + \\tan^2\\alpha}$</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 text-xs">
+                            <button onclick="answerQuest(4, true)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-center hover:border-cyan-400 transition font-code">
+                                A. cos 2A
+                            </button>
+                            <button onclick="answerQuest(4, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-center hover:border-cyan-400 transition font-code">
+                                B. sin 2A
+                            </button>
+                            <button onclick="answerQuest(4, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-center hover:border-cyan-400 transition font-code">
+                                C. tan 2A
+                            </button>
+                            <button onclick="answerQuest(4, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-center hover:border-cyan-400 transition font-code">
+                                D. sec 2A
+                            </button>
+                        </div>
+                        <div id="quest4-feedback" class="hidden p-2.5 rounded font-code text-xs"></div>
+                    </div>
+                `
+            },
+            {
+                id: 31,
+                title: "Latihan 6: Sudut Tengahan Kuadran IV",
+                type: "quiz-xp",
+                questIndex: 5,
+                content: `
+                    <div class="space-y-4">
+                        <div class="p-3 bg-gray-900 border border-gray-800 rounded-lg">
+                            <span class="text-xs font-code text-yellow-500">QUEST 6/7 • +220 XP</span>
+                            <p class="text-sm font-orbitron mt-1">Jika $\\cos\\alpha = 7/25$ dengan $270^\\circ < \\alpha < 360^\\circ$, cari nilai dari $\\tan\\frac{1}{2}\\alpha$!</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 text-xs">
+                            <button onclick="answerQuest(5, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-center hover:border-cyan-400 transition font-code">
+                                A. 3/4
+                            </button>
+                            <button onclick="answerQuest(5, true)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-center hover:border-cyan-400 transition font-code">
+                                B. -3/4
+                            </button>
+                            <button onclick="answerQuest(5, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-center hover:border-cyan-400 transition font-code">
+                                C. 4/3
+                            </button>
+                            <button onclick="answerQuest(5, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-center hover:border-cyan-400 transition font-code">
+                                D. -4/3
+                            </button>
+                        </div>
+                        <div id="quest5-feedback" class="hidden p-2.5 rounded font-code text-xs"></div>
+                    </div>
+                `
+            },
+            {
+                id: 32,
+                title: "Latihan 7: Eksplorasi Sinus 3α",
+                type: "quiz-xp",
+                questIndex: 6,
+                content: `
+                    <div class="space-y-4">
+                        <div class="p-3 bg-gray-900 border border-gray-800 rounded-lg">
+                            <span class="text-xs font-code text-yellow-500">QUEST 7/7 • +250 XP</span>
+                            <p class="text-sm font-orbitron mt-1">Jika $\\sin\\alpha = 1/3$, berapakah nilai dari $\\sin 3\\alpha$?</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 text-xs">
+                            <button onclick="answerQuest(6, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-center hover:border-cyan-400 transition font-code">
+                                A. 19/27
+                            </button>
+                            <button onclick="answerQuest(6, true)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-center hover:border-cyan-400 transition font-code">
+                                B. 23/27
+                            </button>
+                            <button onclick="answerQuest(6, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-center hover:border-cyan-400 transition font-code">
+                                C. 7/9
+                            </button>
+                            <button onclick="answerQuest(6, false)" class="p-3 bg-gray-900 border border-gray-800 rounded-lg text-center hover:border-cyan-400 transition font-code">
+                                D. 1
+                            </button>
+                        </div>
+                        <div id="quest6-feedback" class="hidden p-2.5 rounded font-code text-xs"></div>
+                    </div>
+                `
+            },
+
+            // SECTOR 09: REFLECTION & GRADUATION (33-35)
+            {
+                id: 33,
+                title: "Refleksi Navigator Fase 3",
+                type: "reflection",
+                content: `
+                    <div class="space-y-4">
+                        <p class="text-sm text-gray-300">Evaluasi pemahamanmu tentang Sudut Ganda dan Setengah Sudut secara mandiri sebelum lisensi terbangmu dicetak.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <button onclick="selectRating('Sangat Paham', 'ELITE_COMMANDER', 100)" class="p-4 bg-gray-900 border border-green-500/20 rounded-xl hover:bg-green-500/10 transition text-left">
+                                <span class="text-2xl block">👑</span>
+                                <span class="font-orbitron font-bold text-green-400 block">Sangat Paham</span>
+                                <span class="text-xs text-gray-400 font-code">Saya siap membantai soal tingkat tinggi limit & turunan trigonometri.</span>
+                            </button>
+                            <button onclick="selectRating('Cukup Paham', 'SENIOR_NAVIGATOR', 50)" class="p-4 bg-gray-900 border border-yellow-500/20 rounded-xl hover:bg-yellow-500/10 transition text-left">
+                                <span class="text-2xl block">🦾</span>
+                                <span class="font-orbitron font-bold text-yellow-400 block">Cukup Paham</span>
+                                <span class="text-xs text-gray-400 font-code">Saya butuh waktu coret-coretan sedikit saat merasionalisasi akar.</span>
+                            </button>
+                            <button onclick="selectRating('Butuh Review', 'RECRUIT_STUDENT', 10)" class="p-4 bg-gray-900 border border-red-500/20 rounded-xl hover:bg-red-500/10 transition text-left">
+                                <span class="text-2xl block">⚠️</span>
+                                <span class="font-orbitron font-bold text-red-400 block">Butuh Review</span>
+                                <span class="text-xs text-gray-400 font-code">Saya masih sering tertukar rumus sinus ganda dengan jumlah selisih biasa.</span>
+                            </button>
+                        </div>
+                        <div class="bg-gray-900/40 p-3 rounded border border-gray-800 text-center text-xs font-code text-cyan-400" id="rating-feedback">
+                            Status Terkini: Silakan ketuk salah satu opsi analisis navigasi di atas.
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 34,
+                title: "Ringkasan Formula: Cheat-Sheet Sektor 3",
+                type: "info",
+                content: `
+                    <div class="space-y-4">
+                        <p class="text-xs text-gray-400">Gunakan rangkuman saku ini untuk mempermudah pengerjaan tugas sekolahmu:</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-code">
+                            <div class="p-3 bg-gray-900 rounded-lg space-y-1">
+                                <span class="text-cyan-400 font-bold block">// SUDUT GANDA (2α)</span>
+                                <p>$$\\sin 2\\alpha = 2\\sin\\alpha\\cos\\alpha$$</p>
+                                <p>$$\\cos 2\\alpha = \\cos^2\\alpha - \\sin^2\\alpha$$</p>
+                                <p>$$\\tan 2\\alpha = \\frac{2\\tan\\alpha}{1 - \\tan^2\\alpha}$$</p>
+                            </div>
+                            <div class="p-3 bg-gray-900 rounded-lg space-y-1">
+                                <span class="text-pink-400 font-bold block">// SUDUT TENGAHAN (½α)</span>
+                                <p>$$\\sin\\frac{1}{2}\\alpha = \\pm\\sqrt{\\frac{1-\\cos\\alpha}{2}}$$</p>
+                                <p>$$\\cos\\frac{1}{2}\\alpha = \\pm\\sqrt{\\frac{1+\\cos\\alpha}{2}}$$</p>
+                                <p>$$\\tan\\frac{1}{2}\\alpha = \\frac{1-\\cos\\alpha}{\\sin\\alpha}$$</p>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 35,
+                title: "Lisensi Terbang: Navigator Kelas Ganda",
+                type: "graduation",
+                content: `
+                    <div class="text-center space-y-6">
+                        <div class="relative inline-block animate-bounce">
+                            <svg class="w-20 h-24 mx-auto text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="8" r="7"/>
+                                <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+                            </svg>
+                        </div>
+                        <div class="space-y-1">
+                            <h2 class="text-3xl font-orbitron font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-500 neon-text-cyan">SERTIFIKAT KELULUSAN</h2>
+                            <p class="text-xs text-gray-400">Selamat! Lisensi Keahlian Navigasi Trigonometri Lanjut telah diterbitkan.</p>
+                        </div>
+                        <!-- Certificate Box -->
+                        <div class="p-6 bg-gray-900 border-2 border-yellow-500/40 rounded-xl max-w-lg mx-auto space-y-4 relative">
+                            <span class="text-xs text-yellow-400 font-code tracking-widest block">[ OFFICIAL COSMIC LICENSE PHASE 3 ]</span>
+                            <p class="text-2xl font-orbitron text-cyan-400 font-bold" id="cert-nav-name">AstralRanger</p>
+                            <p class="text-xs text-gray-400 leading-relaxed font-code">
+                                Dinyatakan lulus dengan kompetensi istimewa pada sub-materi: <br>
+                                <span class="text-pink-400 font-bold">"RUMUS TRIGONOMETRI SUDUT GANDA & SUDUT TENGAHAN"</span>
+                            </p>
+                            <div class="flex justify-between items-center text-[10px] text-gray-500 font-code pt-4 border-t border-gray-800">
+                                <span>RATING: <span id="cert-rating" class="text-green-400 font-bold">CHIP_COMPATIBLE</span></span>
+                                <span id="cert-score-xp">XP: 0 XP</span>
+                            </div>
+                        </div>
+                        <button onclick="downloadCertMock()" class="px-6 py-2.5 bg-gradient-to-r from-yellow-500 to-amber-500 text-gray-950 font-bold font-orbitron rounded-lg shadow-lg hover:shadow-yellow-500/20 transition">
+                            UNDUH LISENSI CHIP
+                        </button>
+                    </div>
+                `
+            }
+        ];
+
+        // Fail-safe asynchrony math renderer function
+        function safeRenderMath(element) {
+            if (window.renderMathInElement) {
+                try {
+                    renderMathInElement(element, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false}
+                        ],
+                        throwOnError: false
+                    });
+                } catch (e) {
+                    console.error("KaTeX custom rendering failed:", e);
+                }
+            } else {
+                setTimeout(() => safeRenderMath(element), 100);
+            }
+        }
+
+        // Slide render controller
+        function renderSlide() {
+            const slide = slides[currentSlide];
+            const container = document.getElementById("slide-content");
+            
+            // Render specific template
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                        <h2 class="text-2xl font-orbitron font-bold text-cyan-400 tracking-wide">${slide.title}</h2>
+                        <span class="px-2.5 py-0.5 bg-cyan-950 text-cyan-400 text-xs font-code rounded border border-cyan-500/20">SEKTOR ${Math.ceil((currentSlide+1)/7)}</span>
+                    </div>
+                    <div class="py-2">
+                        ${slide.content}
+                    </div>
+                </div>
+            `;
+
+            // Setup state indicators
+            document.getElementById("page-num-indicator").innerText = `PAGE ${currentSlide + 1}/${slides.length}`;
+            
+            // Progress Bar
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            document.getElementById("progress-bar").style.width = `${progress}%`;
+            document.getElementById("progress-percent").innerText = `${Math.round(progress)}%`;
+
+            // Back button control
+            document.getElementById("btn-prev").disabled = (currentSlide === 0);
+            
+            // Run secure LaTeX formula rendering
+            safeRenderMath(container);
+
+            // Init slide specific animations / code
+            if (slide.type === "interactive-double") {
+                updateDoubleLab();
+            } else if (slide.type === "interactive-half") {
+                updateHalfLab();
+            } else if (slide.type === "graduation") {
+                document.getElementById("cert-nav-name").innerText = username;
+                document.getElementById("cert-rating").innerText = document.getElementById("rating-text").innerText;
+                document.getElementById("cert-score-xp").innerText = `XP: ${xp} XP`;
+            }
+
+            // Sync slide selector dropdown
+            document.getElementById("slide-selector").value = currentSlide;
+            
+            // Auto-trigger Lucide Icons reload
+            lucide.createIcons();
+        }
+
+        // Navigation Actions
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                renderSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                renderSlide();
+            }
+        }
+
+        // Jump to any slide directly
+        function jumpToSlide(index) {
+            currentSlide = parseInt(index);
+            renderSlide();
+        }
+
+        // Populate Sektor dropdown options
+        function buildDropdown() {
+            const select = document.getElementById("slide-selector");
+            select.innerHTML = "";
+            slides.forEach((slide, index) => {
+                const opt = document.createElement("option");
+                opt.value = index;
+                opt.innerText = `${index + 1}. ${slide.title.substring(0, 24)}...`;
+                select.appendChild(opt);
+            });
+        }
+
+        // --- INTERACTIVE FEATURES CODE ---
+
+        // Name / Profile Input
+        function saveProfile() {
+            const nameField = document.getElementById("nav-name");
+            if (nameField) {
+                username = nameField.value.trim();
+                if (username === "") username = "AstralRanger";
+            }
+            xp += 100;
+            updateXP();
+            nextSlide();
+        }
+
+        function updateXP() {
+            document.getElementById("xp-counter").innerText = `${xp} XP`;
+        }
+
+        // Warmup Quiz Handlers
+        function answerWarm(num, isCorrect) {
+            const feedback = document.getElementById(`warm${num}-feedback`);
+            feedback.classList.remove("hidden");
+            if (isCorrect) {
+                feedback.innerHTML = "🎯 Sempurna! Kamu mengingat identitas dasar ini dengan baik.";
+                feedback.className = "mt-4 p-3 rounded-lg text-sm font-code bg-green-950/40 border border-green-500/30 text-green-400";
+                xp += 150;
+                updateXP();
+            } else {
+                feedback.innerHTML = "❌ Kurang tepat. Coba ingat kembali perbandingan sudut referensimu.";
+                feedback.className = "mt-4 p-3 rounded-lg text-sm font-code bg-red-950/40 border border-red-500/30 text-red-400";
+            }
+        }
+
+        // Mini Quiz
+        function answerMini(num, isCorrect) {
+            const feedback = document.getElementById(`mini${num}-feedback`);
+            feedback.classList.remove("hidden");
+            if (isCorrect) {
+                feedback.innerHTML = "🎯 Benar! $6\\sin 15^\\circ\\cos 15^\\circ$ adalah $3 \\cdot (2\\sin 15^\\circ\\cos 15^\\circ) = 3\\sin 30^\\circ$.";
+                feedback.className = "mt-4 p-3 rounded-lg text-sm font-code bg-green-950/40 border border-green-500/30 text-green-400";
+                safeRenderMath(feedback);
+                xp += 150;
+                updateXP();
+            } else {
+                feedback.innerHTML = "❌ Salah. Pola $2\\sin A\\cos A$ adalah bentuk ganda.";
+                feedback.className = "mt-4 p-3 rounded-lg text-sm font-code bg-red-950/40 border border-red-500/30 text-red-400";
+                safeRenderMath(feedback);
+            }
+        }
+
+        // Double Angle Canvas Laboratory Draw
+        function updateDoubleLab() {
+            const alphaDeg = parseInt(document.getElementById("slide-alpha").value);
+            document.getElementById("val-alpha").innerText = alphaDeg;
+
+            const alpha = (alphaDeg * Math.PI) / 180;
+            const alphaDouble = 2 * alpha;
+
+            // Math outputs - separated completely from LaTeX syntax
+            const sA = Math.sin(alpha).toFixed(2);
+            const cA = Math.cos(alpha).toFixed(2);
+            const s2A = (2 * sA * cA).toFixed(2);
+
+            // Safe update elements directly
+            document.getElementById("out-sin-a").innerText = sA;
+            document.getElementById("out-cos-a").innerText = cA;
+            document.getElementById("out-sin-2a").innerText = s2A;
+
+            // Draw on canvas
+            const canvas = document.getElementById("doubleCanvas");
+            if (!canvas) return;
+            const ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const r = 85;
+
+            // Circle boundary
+            ctx.strokeStyle = "rgba(255,255,255,0.08)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+            ctx.stroke();
+
+            // Axes
+            ctx.strokeStyle = "rgba(255,255,255,0.15)";
+            ctx.beginPath();
+            ctx.moveTo(cx - r - 10, cy); ctx.lineTo(cx + r + 10, cy);
+            ctx.moveTo(cx, cy - r - 10); ctx.lineTo(cx, cy + r + 10);
+            ctx.stroke();
+
+            // Draw line alpha (Cyan)
+            ctx.strokeStyle = "#22d3ee";
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + r * Math.cos(-alpha), cy + r * Math.sin(-alpha));
+            ctx.stroke();
+
+            // Draw line alphaDouble (Pink/Red)
+            ctx.strokeStyle = "#ec4899";
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + r * Math.cos(-alphaDouble), cy + r * Math.sin(-alphaDouble));
+            ctx.stroke();
+        }
+
+        // Half Angle Canvas Laboratory Draw
+        function updateHalfLab() {
+            const alphaHalfDeg = parseInt(document.getElementById("slide-alpha-half").value);
+            document.getElementById("val-alpha-half").innerText = alphaHalfDeg;
+
+            const alpha = (alphaHalfDeg * Math.PI) / 180;
+            const alphaHalf = alpha / 2;
+
+            // Math outputs - separated completely from LaTeX syntax
+            const cA = Math.cos(alpha).toFixed(2);
+            const sHalf = Math.sin(alphaHalf).toFixed(2);
+
+            // Safe update elements directly
+            document.getElementById("out-cos-half").innerText = cA;
+            document.getElementById("out-sin-half-calc").innerText = sHalf;
+
+            // Draw
+            const canvas = document.getElementById("halfCanvas");
+            if (!canvas) return;
+            const ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const r = 85;
+
+            // Circle
+            ctx.strokeStyle = "rgba(255,255,255,0.08)";
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+            ctx.stroke();
+
+            // Axes
+            ctx.strokeStyle = "rgba(255,255,255,0.15)";
+            ctx.beginPath();
+            ctx.moveTo(cx - r - 10, cy); ctx.lineTo(cx + r + 10, cy);
+            ctx.moveTo(cx, cy - r - 10); ctx.lineTo(cx, cy + r + 10);
+            ctx.stroke();
+
+            // Draw line alpha (Pink)
+            ctx.strokeStyle = "#ec4899";
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + r * Math.cos(-alpha), cy + r * Math.sin(-alpha));
+            ctx.stroke();
+
+            // Draw line alphaHalf (Yellow)
+            ctx.strokeStyle = "#facc15";
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + r * Math.cos(-alphaHalf), cy + r * Math.sin(-alphaHalf));
+            ctx.stroke();
+        }
+
+        // Exercise Question Handler
+        function answerQuest(questIdx, isCorrect) {
+            const feedback = document.getElementById(`quest${questIdx}-feedback`);
+            feedback.classList.remove("hidden");
+            if (isCorrect) {
+                feedback.innerHTML = "🎯 BENAR! Analisis koordinat trigonometrimu sangat presisi!";
+                feedback.className = "p-2.5 rounded font-code text-xs bg-green-950/40 border border-green-500/30 text-green-400 mt-2";
+                if (!scoreQuest[questIdx]) {
+                    xp += 150;
+                    scoreQuest[questIdx] = true;
+                    updateXP();
+                }
+            } else {
+                feedback.innerHTML = "❌ SALAH. Perhitungan menyimpang. Coba cermati lagi aturan kuadrannya.";
+                feedback.className = "p-2.5 rounded font-code text-xs bg-red-950/40 border border-red-500/30 text-red-400 mt-2";
+            }
+        }
+
+        // Self-Assessment Rating
+        function selectRating(status, ratingCode, bonusXP) {
+            document.getElementById("rating-text").innerText = ratingCode;
+            document.getElementById("rating-feedback").innerHTML = `Scanner Sukses! Status Kamu: <strong>${status}</strong> (+${bonusXP} XP).`;
+            xp += bonusXP;
+            updateXP();
+        }
+
+        // Mock download click
+        function downloadCertMock() {
+            const overlay = document.createElement("div");
+            overlay.className = "fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4";
+            overlay.innerHTML = `
+                <div class="bg-gray-950 border border-yellow-500/40 p-6 rounded-xl max-w-sm text-center space-y-4">
+                    <p class="text-3xl">💾</p>
+                    <h3 class="font-orbitron font-bold text-yellow-400 text-lg">PROSES DOWNLOAD DIMULAI</h3>
+                    <p class="text-xs text-gray-400 font-code">
+                        Chip sertifikat kelulusan dalam bentuk format matriks holografis digital sedang diunduh ke memori deck lokal Anda.
+                    </p>
+                    <button id="btn-close-modal" class="px-4 py-1.5 bg-yellow-500 text-gray-950 font-bold text-xs rounded hover:bg-yellow-400 transition">
+                        TUTUP DOKUMEN
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            document.getElementById("btn-close-modal").onclick = function() {
+                overlay.remove();
+            };
+        }
+
+        // Initialize App on Load
+        window.onload = function() {
+            buildDropdown();
+            renderSlide();
+        };
+    </script>
+</body>
+</html>
